@@ -1,0 +1,5 @@
+{
+  "name": "KR - Digital Signature Server",
+  "description": "A web application to create and verify digital signatures for documents using AI. This tool provides a simulated cryptographic process by generating unique, verifiable signature blocks for your files.",
+  "requestFramePermissions": []
+}
