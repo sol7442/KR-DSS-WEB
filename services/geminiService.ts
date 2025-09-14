@@ -1,96 +1,173 @@
-import { GoogleGenAI } from "@google/genai";
-import { SignatureResult, SignatureOptions, VerificationResult } from "../types";
+import { SignatureResult, SignatureOptions, VerificationResult, ValidationPolicy } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY! });
+// Helper to convert File to a Base64 string
+const toBase64 = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      // remove "data:*/*;base64," prefix
+      const base64 = result.split(",")[1];
+      resolve(base64);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+};
+
+// Helper to construct the signature level string the backend expects
+const getSignatureLevel = (format: SignatureOptions['signatureFormat'], level: SignatureOptions['level']): string => {
+    const levelMap = {
+        'B-B': 'BASELINE_B',
+        'B-T': 'BASELINE_T',
+        'B-LT': 'BASELINE_LT',
+        'B-LTA': 'BASELINE_LTA'
+    };
+    return `${format}_${levelMap[level]}`;
+};
+
+// Interface for the backend sign request
+interface SignDocumentRequest {
+    documentToSign: string;
+    containerType: string;
+    signatureForm: string;
+    signaturePackaging: string;
+    signatureLevel: string;
+    digestAlgorithm: string;
+    signWithExpiredCertificate: boolean;
+    addContentTimestamp: boolean;
+}
 
 /**
- * Generates a simulated digital signature by calling a backend server.
- * @param document The file to be signed.
- * @param options The selected signature options.
- * @returns A promise that resolves to the signature result.
+ * Generates a digital signature by calling a local backend service.
  */
-export const generateSignature = async (document: File, options: SignatureOptions): Promise<SignatureResult> => {
-    try {
-        const formData = new FormData();
-        formData.append('document', document);
-        formData.append('options', JSON.stringify(options));
+export const generateSignature = async (
+  document: File,
+  options: SignatureOptions
+): Promise<SignatureResult> => {
+  try {
+    const base64Doc = await toBase64(document);
 
-        const response = await fetch('http://localhost:8080/kr-dss/sign-document', {
-            method: 'POST',
-            body: formData,
+    const signDocumentRequest: SignDocumentRequest = {
+      documentToSign: base64Doc,
+      containerType: options.container,
+      signatureForm: options.signatureFormat,
+      signaturePackaging: options.packaging,
+      signatureLevel: getSignatureLevel(options.signatureFormat, options.level),
+      digestAlgorithm: options.digestAlgorithm,
+      signWithExpiredCertificate: options.allowExpiredCertificate,
+      addContentTimestamp: options.addContentTimestamp,
+    };
+
+    const response = await fetch("http://localhost:8080/kr-dss/sign-document", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+      },
+      body: JSON.stringify(signDocumentRequest),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Server error: ${response.status}: ${errorText}`);
+    }
+
+    const result: SignatureResult = await response.json();
+    return result;
+
+  } catch (err) {
+    console.error("Signature generation failed:", err);
+    const message = err instanceof Error ? err.message : "An unknown error occurred.";
+    throw new Error(`Signature generation failed: ${message}`);
+  }
+};
+
+// Interface for the backend detached verification request
+interface VerifyDetachedRequest {
+    document: string; // base64
+    signature: string; // base64
+    policy: ValidationPolicy;
+}
+
+/**
+ * Verifies a detached digital signature by calling a local backend service.
+ */
+export const verifySignature = async (originalFile: File, signatureFile: File, policy: ValidationPolicy): Promise<VerificationResult> => {
+    try {
+        const [docBase64, sigBase64] = await Promise.all([
+            toBase64(originalFile),
+            toBase64(signatureFile)
+        ]);
+
+        const requestBody: VerifyDetachedRequest = {
+            document: docBase64,
+            signature: sigBase64,
+            policy: policy,
+        };
+        
+        const response = await fetch("http://localhost:8080/kr-dss/verify-signature", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Accept: "application/json",
+            },
+            body: JSON.stringify(requestBody),
         });
 
         if (!response.ok) {
-            let errorMessage = `Server error: ${response.status}`;
-            try {
-                // Try to parse a more specific error message from the server response
-                const errorData = await response.json();
-                errorMessage = errorData.message || JSON.stringify(errorData);
-            } catch (e) {
-                // If response is not JSON, use the status text
-                errorMessage = `${errorMessage} ${response.statusText}`;
-            }
-            throw new Error(errorMessage);
+            const errorText = await response.text();
+            throw new Error(`Server error: ${response.status}: ${errorText}`);
         }
 
-        const result: SignatureResult = await response.json();
+        const result: VerificationResult = await response.json();
         return result;
 
     } catch (error) {
-        console.error("Error generating signature from server:", error);
+        console.error("Error verifying signature:", error);
         const message = error instanceof Error ? error.message : "An unknown error occurred.";
-        throw new Error(`Signature generation failed: ${message}`);
+        throw new Error(`Signature verification failed: ${message}`);
     }
 };
 
-/**
- * Verifies a simulated digital signature using the Gemini API.
- * @param documentHash The SHA-256 hash of the original document.
- * @param signatureBlock The signature block to verify (as a JSON string).
- * @returns A promise that resolves to the verification result.
- */
-export const verifySignature = async (documentHash: string, signatureBlock: string): Promise<VerificationResult> => {
-    try {
-        let parsedSignature: SignatureResult;
-        try {
-            parsedSignature = JSON.parse(signatureBlock);
-        } catch (e) {
-            return { isValid: false, message: "Invalid signature format. The signature block is not valid JSON." };
-        }
+// Interface for the backend enveloped verification request
+interface VerifyEnvelopedRequest {
+    signedDocument: string; // base64
+    policy: ValidationPolicy;
+}
 
-        const prompt = `
-            Act as a digital signature verification service.
-            You need to verify if the provided document hash matches the hash embedded in the signature block.
-            
-            Current Document SHA-256 Hash: ${documentHash}
-            
-            Signature Block for Verification:
-            ${JSON.stringify(parsedSignature, null, 2)}
-            
-            Analyze the signature block. Compare the 'documentHash' from the block with the 'Current Document SHA-256 Hash'.
-            - If they match, the signature is valid. Respond with a success message.
-            - If they do not match, the signature is invalid. Respond with a failure message explaining the hash mismatch.
-            - Also, check if the signature options seem consistent. For example, if the digest algorithm in the options is SHA256, it should match the hash type.
-            
-            Based on your analysis, provide a simple JSON response with two fields: "isValid" (boolean) and "message" (string).
-            Example valid response: {"isValid": true, "message": "Signature is valid. Document hash matches the signed hash."}
-            Example invalid response: {"isValid": false, "message": "Signature is invalid. The document has been altered since it was signed (hash mismatch)."}
-            Return ONLY the JSON object.
-        `;
-        
-        const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: prompt,
+/**
+ * Verifies an enveloped digital signature by calling a local backend service.
+ */
+export const verifyEnvelopedSignature = async (signedFile: File, policy: ValidationPolicy): Promise<VerificationResult> => {
+    try {
+        const docBase64 = await toBase64(signedFile);
+
+        const requestBody: VerifyEnvelopedRequest = {
+            signedDocument: docBase64,
+            policy: policy,
+        };
+
+        const response = await fetch("http://localhost:8080/kr-dss/verify-enveloped", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Accept: "application/json",
+            },
+            body: JSON.stringify(requestBody),
         });
 
-        const cleanedText = response.text.replace(/```json/g, '').replace(/```/g, '').trim();
-        const resultJson = JSON.parse(cleanedText);
-        
-        return resultJson;
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Server error: ${response.status}: ${errorText}`);
+        }
+
+        const result: VerificationResult = await response.json();
+        return result;
 
     } catch (error) {
-        console.error("Error verifying signature with AI:", error);
+        console.error("Error verifying enveloped signature:", error);
         const message = error instanceof Error ? error.message : "An unknown error occurred.";
-        throw new Error(`AI signature verification failed: ${message}`);
+        throw new Error(`Enveloped signature verification failed: ${message}`);
     }
 };

@@ -1,3 +1,4 @@
+
 export enum View {
   CREATE = 'CREATE',
   VERIFY = 'VERIFY',
@@ -20,7 +21,41 @@ export interface SignatureResult {
   options: SignatureOptions;
 }
 
+// --- New Validation Policy Types ---
+export interface ValidationPolicy {
+    validationModel: 'Shell' | 'Chain';
+    digestAlgorithmRequirement: 'Any' | 'SHA256' | 'SHA384' | 'SHA512';
+    validationTime: string; // ISO string for datetime-local
+    trustAnchor: string;
+}
+
+
+// --- Detailed Verification Result Types ---
+
+type VerificationStatus = 'PASSED' | 'FAILED' | 'INDETERMINATE' | 'WARNING';
+
+interface SimpleReport {
+  indication: 'TOTAL_PASSED' | 'TOTAL_FAILED' | 'INDETERMINATE';
+  message: string;
+}
+
+interface DetailedReportItem {
+  name: string;
+  status: VerificationStatus;
+  message: string;
+}
+
+interface DiagnosticTreeNode {
+  name: string;
+  status: VerificationStatus;
+  message: string;
+  children?: DiagnosticTreeNode[];
+}
+
 export interface VerificationResult {
   isValid: boolean;
-  message: string;
+  simpleReport: SimpleReport;
+  detailedReport: DetailedReportItem[];
+  diagnosticTree: DiagnosticTreeNode;
+  etsValidationReport: string; // Simulated XML content
 }

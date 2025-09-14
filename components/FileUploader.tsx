@@ -1,12 +1,14 @@
-
 import React, { useState, useRef, useCallback } from 'react';
 import { UploadIcon, FileIcon } from './Icons';
 
 interface FileUploaderProps {
   onFileChange: (file: File | null) => void;
+  accept?: string;
+  fileTypeDescription?: string;
+  placeholder?: string;
 }
 
-const FileUploader: React.FC<FileUploaderProps> = ({ onFileChange }) => {
+const FileUploader: React.FC<FileUploaderProps> = ({ onFileChange, accept, fileTypeDescription = "Any file type is accepted", placeholder = "Click to upload a document" }) => {
   const [fileName, setFileName] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -32,6 +34,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({ onFileChange }) => {
         ref={fileInputRef}
         onChange={handleFileSelect}
         className="hidden"
+        accept={accept}
       />
       <button
         onClick={handleButtonClick}
@@ -39,9 +42,9 @@ const FileUploader: React.FC<FileUploaderProps> = ({ onFileChange }) => {
       >
         <UploadIcon className="w-10 h-10 text-gray-400 mb-2" />
         <span className="text-lg font-semibold text-gray-300">
-          {fileName ? 'Click to change file' : 'Click to upload a document'}
+          {fileName ? 'Click to change file' : placeholder}
         </span>
-        <span className="text-sm text-gray-500">Any file type is accepted</span>
+        <span className="text-sm text-gray-500">{fileTypeDescription}</span>
       </button>
       {fileName && (
         <div className="mt-4 flex items-center justify-center bg-gray-700 p-3 rounded-lg">

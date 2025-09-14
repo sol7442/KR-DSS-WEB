@@ -59,6 +59,12 @@ const SignatureCreator: React.FC = () => {
 
       <SignatureOptionsForm onChange={handleOptionsChange} disabled={isLoading} />
 
+      {signatureOptions?.packaging !== 'Detached' && (
+        <div className="text-sm text-yellow-300 bg-yellow-900/50 p-3 rounded-lg text-center border border-yellow-700">
+            <strong>Note:</strong> For this simulation, all signatures are generated as detached files. With '{signatureOptions?.packaging}' packaging, the signature would typically be embedded within the original document.
+        </div>
+      )}
+
       <button
         onClick={handleGenerateSignature}
         disabled={!file || isLoading}
@@ -80,6 +86,7 @@ const SignatureCreator: React.FC = () => {
           type="success"
           message="Signature generated successfully!"
           signatureResult={result}
+          originalFileName={file?.name}
         />
       )}
     </div>
