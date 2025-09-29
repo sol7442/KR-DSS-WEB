@@ -6,7 +6,7 @@ const initialOptions: SignatureOptions = {
   signatureFormat: 'PAdES',
   packaging: 'Enveloped',
   level: 'B-B',
-  digestAlgorithm: 'SHA256',
+  digestAlgorithm: 'SHA-256',
   allowExpiredCertificate: false,
   addContentTimestamp: false,
 };
@@ -30,41 +30,29 @@ const SignatureOptionsForm: React.FC<SignatureOptionsFormProps> = ({ onChange, d
     let newOpts = { ...options };
     const newDisabled = { container: [] as string[], signatureFormat: [] as string[], packaging: [] as string[] };
 
-    // Rule: PAdES is always Enveloped and has no container
-    if (newOpts.signatureFormat === 'PAdES') {
-      newOpts.packaging = 'Enveloped';
-      newOpts.container = 'No';
-      newDisabled.packaging.push('Enveloping', 'Detached', 'Internally detached');
-      newDisabled.container.push('ASiC-S', 'ASiC-E');
-    }
+
     
     // Rule: ASiC containers require Detached packaging
     if (newOpts.container === 'ASiC-S' || newOpts.container === 'ASiC-E') {
         newOpts.packaging = 'Detached';
         newDisabled.packaging.push('Enveloped', 'Enveloping', 'Internally detached');
-        // PAdES is not compatible with ASiC
-        if (newOpts.signatureFormat === 'PAdES') {
-            newOpts.signatureFormat = 'CAdES';
-        }
-        newDisabled.signatureFormat.push('PAdES');
+        
+        newDisabled.signatureFormat.push('PAdES', 'JAdES');        
+    }else{
+
+      if (newOpts.signatureFormat === 'XAdES') {        
+        newOpts.packaging = 'Enveloped';              
+      }
+      if (newOpts.signatureFormat === 'CAdES' || newOpts.signatureFormat === 'JAdES') {       
+        newOpts.packaging = 'Enveloping';    
+        newDisabled.packaging.push('Enveloped', 'Internally detached');
+      }
+      if (newOpts.signatureFormat === 'PAdES') {       
+        newOpts.packaging = 'Enveloped';    
+        newDisabled.packaging.push('Enveloping', 'Detached','Internally detached');
+      }
     }
 
-    // Rule: JAdES does not support Enveloping
-    if (newOpts.signatureFormat === 'JAdES' && newOpts.packaging === 'Enveloping') {
-        newOpts.packaging = 'Enveloped';
-    }
-    if (newOpts.signatureFormat === 'JAdES') {
-        newDisabled.packaging.push('Enveloping');
-    }
-
-    // Rule: CAdES does not support Internally detached
-    if (newOpts.signatureFormat === 'CAdES' && newOpts.packaging === 'Internally detached') {
-        newOpts.packaging = 'Detached';
-    }
-    if (newOpts.signatureFormat === 'CAdES') {
-        newDisabled.packaging.push('Internally detached');
-    }
-    
     // If state was changed, update it.
     if (JSON.stringify(newOpts) !== JSON.stringify(options)) {
         setOptions(newOpts);

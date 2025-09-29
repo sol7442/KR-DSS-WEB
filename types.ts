@@ -5,26 +5,25 @@ export enum View {
 }
 
 export interface SignatureOptions {
-  container: 'No' | 'ASiC-S' | 'ASiC-E';
+  container: 'ASiC-S' | 'ASiC-E';
   signatureFormat: 'XAdES' | 'CAdES' | 'PAdES' | 'JAdES';
-  packaging: 'Enveloped' | 'Enveloping' | 'Detached' | 'Internally detached';
+  packaging: 'ENVELOPED' | 'ENVELOPING' | 'DETACHED' | 'INTERNALLY_DETACHED';
   level: 'B-B' | 'B-T' | 'B-LT' | 'B-LTA';
-  digestAlgorithm: 'SHA1' | 'SHA256' | 'SHA384' | 'SHA512';
+  digestAlgorithm: 'SHA-1' | 'SHA-256' | 'SHA-384' | 'SHA-512';
   allowExpiredCertificate: boolean;
   addContentTimestamp: boolean;
 }
 
 export interface SignatureResult {
-  signature: string;
-  timestamp: string;
-  documentHash: string;
-  options: SignatureOptions;
+  result: string;
+  fileName: string;
+  documentBase64: string;
 }
 
 // --- New Validation Policy Types ---
 export interface ValidationPolicy {
     validationModel: 'Shell' | 'Chain';
-    digestAlgorithmRequirement: 'Any' | 'SHA256' | 'SHA384' | 'SHA512';
+    digestAlgorithmRequirement: 'Any' | 'SHA-256' | 'SHA-384' | 'SHA-512';
     validationTime: string; // ISO string for datetime-local
     trustAnchor: string;
 }
