@@ -1,0 +1,32 @@
+@startuml
+actor User
+participant Client
+participant "GNAP Authorization Server" as AS
+participant "Signature Service Provider" as SSP
+participant "SAM (Signature Activation Module)" as SAM
+participant HSM
+participant "Relying Party" as RP
+
+== 서명 요청 ==
+User -> Client : 서명 요청
+Client -> AS : 권한 요청(서명 요청 포함)
+
+== 권한 협상 ==
+AS -> User : 권한 승인 요청(대표자/대리인 확인 등)
+User -> AS : 권한 승인
+AS -> SSP : 권한 협상(서명 조건 확정)
+
+== SAM 연동 ==
+AS -> SAM : 서명 활성화 요청
+User -> SAM : 사용자 인증(FIDO/OTP/생체)
+SAM -> AS : SAD(Signature Activation Data) 전달
+
+== 서명 생성 ==
+AS -> HSM : SAT(Signature Activation Token) 전달
+SAM -> HSM : SAD 전달
+HSM -> SSP : 전자서명 생성
+
+== 서명 결과 ==
+SSP -> RP : 전자서명 전달
+RP -> SSP : 서명 검증 결과
+@enduml

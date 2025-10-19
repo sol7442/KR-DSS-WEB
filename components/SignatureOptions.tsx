@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback,useRef } from 'react';
 import { SignatureOptions } from '../types';
 
 const initialOptions: SignatureOptions = {
-  container: 'No',
+  container: 'NO',
   signatureFormat: 'PAdES',
-  packaging: 'Enveloped',
+  packaging: 'ENVELOPED',
   level: 'B-B',
   digestAlgorithm: 'SHA-256',
   allowExpiredCertificate: false,
@@ -17,48 +17,67 @@ interface SignatureOptionsFormProps {
 }
 
 const SignatureOptionsForm: React.FC<SignatureOptionsFormProps> = ({ onChange, disabled }) => {
-  const [options, setOptions] = useState<SignatureOptions>(initialOptions);
   
+  const [options, setOptions] = useState<SignatureOptions>(initialOptions);
   const [disabledOptions, setDisabledOptions] = useState({
     container: [] as string[],
     signatureFormat: [] as string[],
     packaging: [] as string[],
   });
 
+  const isInternalUpdate = useRef(false); // ✅ 내부 변경인지 추적
+  let changed = false;
   useEffect(() => {
+    if (isInternalUpdate.current) {
+      isInternalUpdate.current = false;
+      return; // 내부 업데이트는 무시
+    }
+
+    console.log('Options changed:', options);
+
     // This effect synchronizes the state and disables invalid combinations.
     let newOpts = { ...options };
-    const newDisabled = { container: [] as string[], signatureFormat: [] as string[], packaging: [] as string[] };
+    const newDisabled = { 
+      container: [] as string[], 
+      signatureFormat: [] as string[], 
+      packaging: [] as string[] };
 
 
-    
     // Rule: ASiC containers require Detached packaging
     if (newOpts.container === 'ASiC-S' || newOpts.container === 'ASiC-E') {
         newOpts.packaging = 'Detached';
-        newDisabled.packaging.push('Enveloped', 'Enveloping', 'Internally detached');
-        
+        newDisabled.packaging.push('Enveloped', 'Enveloping', 'Internally detached');        
         newDisabled.signatureFormat.push('PAdES', 'JAdES');        
+        changed = true;
     }else{
 
       if (newOpts.signatureFormat === 'XAdES') {        
-        newOpts.packaging = 'Enveloped';              
+        //newOpts.packaging = 'Enveloped';             
+        changed = true; 
       }
       if (newOpts.signatureFormat === 'CAdES' || newOpts.signatureFormat === 'JAdES') {       
-        newOpts.packaging = 'Enveloping';    
+        //newOpts.packaging = 'Enveloping';            
         newDisabled.packaging.push('Enveloped', 'Internally detached');
+        changed = true;
       }
       if (newOpts.signatureFormat === 'PAdES') {       
-        newOpts.packaging = 'Enveloped';    
+        //newOpts.packaging = 'Enveloped';    
         newDisabled.packaging.push('Enveloping', 'Detached','Internally detached');
+        changed = true;
       }
     }
 
-    // If state was changed, update it.
-    if (JSON.stringify(newOpts) !== JSON.stringify(options)) {
-        setOptions(newOpts);
+    setDisabledOptions(prev => {
+      if (JSON.stringify(prev) !== JSON.stringify(newDisabled)) {
+        return newDisabled;
+      }
+      return prev;
+    });
+
+    if (changed) {
+      setOptions(newOpts);
+      onChange(newOpts);
     }
-    setDisabledOptions(newDisabled);
-    onChange(newOpts); // always notify parent of the consistent state
 
   }, [options.signatureFormat, options.container, options.packaging]);
 
@@ -128,7 +147,7 @@ const SignatureOptionsForm: React.FC<SignatureOptionsFormProps> = ({ onChange, d
           <option>B-LTA</option>
         </select>
 
-        <RadioGroup label="Digest algorithm" name="digestAlgorithm" optionsList={['SHA1', 'SHA256', 'SHA384', 'SHA512']} selected={options.digestAlgorithm} field="digestAlgorithm" />
+        <RadioGroup label="Digest algorithm" name="digestAlgorithm" optionsList={['SHA-1', 'SHA-256', 'SHA-384', 'SHA-512']} selected={options.digestAlgorithm} field="digestAlgorithm" />
         <Checkbox label="Allow expired certificate" field="allowExpiredCertificate" checked={options.allowExpiredCertificate} />
         <Checkbox label="Add a content timestamp" field="addContentTimestamp" checked={options.addContentTimestamp} />
       </div>

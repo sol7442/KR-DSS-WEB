@@ -5,7 +5,7 @@ export enum View {
 }
 
 export interface SignatureOptions {
-  container: 'ASiC-S' | 'ASiC-E';
+  container: 'NO'|'ASiC-S' | 'ASiC-E';
   signatureFormat: 'XAdES' | 'CAdES' | 'PAdES' | 'JAdES';
   packaging: 'ENVELOPED' | 'ENVELOPING' | 'DETACHED' | 'INTERNALLY_DETACHED';
   level: 'B-B' | 'B-T' | 'B-LT' | 'B-LTA';
