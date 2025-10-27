@@ -86,12 +86,19 @@ export interface SignDocumentRequest {
 
 
 async function generateSignatureValue(base64Doc: string, algorithm: string = "SHA-256"): Promise<Uint8Array> {
+  
+  const subtle = (window.crypto || (window as any).msCrypto)?.subtle;
+  if (!subtle) {
+    throw new Error('Web Crypto API not supported in this environment');
+  }
   // Base64 → ArrayBuffer 변환
   const binary = atob(base64Doc);
   const bytes = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i++) {
     bytes[i] = binary.charCodeAt(i);
   }
+
+  console.log("Generating signature value algorithm:", algorithm);
 
   // 다이제스트 계산
   const digest = await crypto.subtle.digest(algorithm, bytes);
@@ -110,9 +117,8 @@ export const generateSignature = async (
   try {
     const base64Doc = await toBase64(document);
 
-    // 🔑 signatureValue 직접 생성 (SHA-256 다이제스트)
     console.log("Generating signature base64Doc:", base64Doc);
-    console.log("Using using signatureFormat:", options.signatureFormat);
+    console.log("SignatureOptions:", options);    
     console.log("Generating signature value using digest algorithm:", options.digestAlgorithm);
     const signatureValue = await generateSignatureValue(base64Doc, options.digestAlgorithm ?? "SHA-256");
 

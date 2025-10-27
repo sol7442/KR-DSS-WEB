@@ -25,15 +25,8 @@ const SignatureOptionsForm: React.FC<SignatureOptionsFormProps> = ({ onChange, d
     packaging: [] as string[],
   });
 
-  const isInternalUpdate = useRef(false); // ✅ 내부 변경인지 추적
-  let changed = false;
-  useEffect(() => {
-    if (isInternalUpdate.current) {
-      isInternalUpdate.current = false;
-      return; // 내부 업데이트는 무시
-    }
 
-    console.log('Options changed:', options);
+  useEffect(() => {
 
     // This effect synchronizes the state and disables invalid combinations.
     let newOpts = { ...options };
@@ -48,38 +41,44 @@ const SignatureOptionsForm: React.FC<SignatureOptionsFormProps> = ({ onChange, d
         newOpts.packaging = 'Detached';
         newDisabled.packaging.push('Enveloped', 'Enveloping', 'Internally detached');        
         newDisabled.signatureFormat.push('PAdES', 'JAdES');        
-        changed = true;
     }else{
-
+      newOpts.container = 'No';
       if (newOpts.signatureFormat === 'XAdES') {        
-        //newOpts.packaging = 'Enveloped';             
-        changed = true; 
+        newOpts.packaging = 'Enveloped';             
       }
       if (newOpts.signatureFormat === 'CAdES' || newOpts.signatureFormat === 'JAdES') {       
-        //newOpts.packaging = 'Enveloping';            
+        newOpts.packaging = 'Enveloping';            
         newDisabled.packaging.push('Enveloped', 'Internally detached');
-        changed = true;
       }
       if (newOpts.signatureFormat === 'PAdES') {       
-        //newOpts.packaging = 'Enveloped';    
+        newOpts.packaging = 'Enveloped';    
         newDisabled.packaging.push('Enveloping', 'Detached','Internally detached');
-        changed = true;
       }
     }
 
-    setDisabledOptions(prev => {
-      if (JSON.stringify(prev) !== JSON.stringify(newDisabled)) {
-        return newDisabled;
-      }
-      return prev;
-    });
 
-    if (changed) {
-      setOptions(newOpts);
-      onChange(newOpts);
-    }
 
-  }, [options.signatureFormat, options.container, options.packaging]);
+    setDisabledOptions(prev =>
+      JSON.stringify(prev) !== JSON.stringify(newDisabled) ? newDisabled : prev
+    );
+    
+    setOptions(newOpts);
+    console.log('Options changed:', options);
+    onChange(newOpts);
+    // ///if (changed) {
+    //   setOptions(newOpts);
+    //   onChange(newOpts);
+    // //}
+
+  },  [
+  options.container,
+  options.signatureFormat,
+  options.packaging,
+  options.level,                 
+  options.digestAlgorithm,       
+  options.allowExpiredCertificate, 
+  options.addContentTimestamp    
+]);
 
 
   const handleOptionChange = useCallback(<K extends keyof SignatureOptions>(field: K, value: SignatureOptions[K]) => {
@@ -145,11 +144,11 @@ const SignatureOptionsForm: React.FC<SignatureOptionsFormProps> = ({ onChange, d
           <option>B-T</option>
           <option>B-LT</option>
           <option>B-LTA</option>
-        </select>
-
+        </select>        
         <RadioGroup label="Digest algorithm" name="digestAlgorithm" optionsList={['SHA-1', 'SHA-256', 'SHA-384', 'SHA-512']} selected={options.digestAlgorithm} field="digestAlgorithm" />
         <Checkbox label="Allow expired certificate" field="allowExpiredCertificate" checked={options.allowExpiredCertificate} />
-        <Checkbox label="Add a content timestamp" field="addContentTimestamp" checked={options.addContentTimestamp} />
+        <Checkbox label="Add a content timestamp" field="addContentTimestamp" checked={options.addContentTimestamp} />        
+
       </div>
     </div>
   );
