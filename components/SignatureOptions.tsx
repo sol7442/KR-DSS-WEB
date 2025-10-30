@@ -62,7 +62,7 @@ const SignatureOptionsForm: React.FC<SignatureOptionsFormProps> = ({ onChange, d
       JSON.stringify(prev) !== JSON.stringify(newDisabled) ? newDisabled : prev
     );
     
-    setOptions(newOpts);
+    //setOptions(newOpts);
     console.log('Options changed:', options);
     onChange(newOpts);
     // ///if (changed) {
