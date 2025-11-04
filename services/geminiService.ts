@@ -239,7 +239,7 @@ export const verifySignature = async (originalFile: File, signatureFile: File, p
 
 // Interface for the backend enveloped verification request
 interface VerifyEnvelopedRequest {
-    signedDocument: string; // base64
+    signature: string; // base64
     policy: ValidationPolicy;
 }
 
@@ -251,7 +251,7 @@ export const verifyEnvelopedSignature = async (signedFile: File, policy: Validat
     const docBase64 = await toBase64(signedFile);
 
     const requestBody: VerifyEnvelopedRequest = {
-      signedDocument: docBase64,
+      signature: docBase64,
       policy: policy,
     };
 
@@ -323,7 +323,7 @@ export const verifyEnvelopedSignature = async (signedFile: File, policy: Validat
       }
       }
 
-    // const response = await fetch("http://localhost:8080/kr-dss/verify-enveloped", {
+    // const response = await fetch("http://localhost:8080/kr-dss/verify-signature", {
     //     method: "POST",
     //     headers: {
     //         "Content-Type": "application/json",
