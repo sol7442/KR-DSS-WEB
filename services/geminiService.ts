@@ -356,16 +356,6 @@ export const verifyEnvelopedSignature = async (
       // }
       // }
 
-    // const response = await fetch("http://localhost:8080/kr-dss/verify-signature", {
-    //     method: "POST",
-    //     headers: {
-    //         "Content-Type": "application/json",
-    //         Accept: "application/json",
-    //     },
-    //     body: JSON.stringify(requestBody),
-    // });
-
-    //2025.10.21_sujin 테스트를 위한 요청메시지
     const response = await fetch("http://localhost:8081/kr-dss/verify-signature", {
         method: "POST",
         headers: {
