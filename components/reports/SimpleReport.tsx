@@ -20,7 +20,7 @@ const SimpleReport: React.FC<SimpleReportProps> = ({ simpleReport }) => {
       <h3 className={`mt-4 text-2xl font-bold ${colorClass}`}>
         {simpleReport.indication.replace('_', ' ')}
       </h3>
-      <p className="mt-2 text-gray-300 max-w-md">{simpleReport.message}</p>
+      <p className="mt-2 text-gray-300 max-w-md whitespace-pre-line">{simpleReport.message}</p>
     </div>
   );
 };

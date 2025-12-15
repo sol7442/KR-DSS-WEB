@@ -32,7 +32,7 @@ const DetailedReport: React.FC<DetailedReportProps> = ({ detailedReport }) => {
               <Icon className={`w-6 h-6 mr-4 flex-shrink-0 ${color}`} />
               <div className="flex-1">
                 <p className={`font-semibold ${color}`}>{item.name}</p>
-                <p className="text-sm text-gray-400">{item.message}</p>
+                <p className="text-sm text-gray-400 whitespace-pre-line">{item.message}</p>
               </div>
             </li>
           );

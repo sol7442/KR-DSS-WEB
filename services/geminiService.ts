@@ -188,74 +188,199 @@ export const verifySignature = async (
         policy: policy
       };
 
-      const response = await fetch("http://localhost:8081/kr-dss/verify-signature", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-        },
-        body: JSON.stringify(requestBody),
-      });
+      // const response = await fetch("http://localhost:8081/kr-dss/verify-signature", {
+      //   method: "POST",
+      //   headers: {
+      //       "Content-Type": "application/json",
+      //       Accept: "application/json",
+      //   },
+      //   body: JSON.stringify(requestBody),
+      // });
 
       
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Server error: ${response.status}: ${errorText}`);
-      }
-      const result: VerificationResult = await response.json();
+      // if (!response.ok) {
+      //   const errorText = await response.text();
+      //   throw new Error(`Server error: ${response.status}: ${errorText}`);
+      // }
+
+      // const result: VerificationResult = await response.json();      
+      // console.log("Signature generation result:", result); 
+      const result: VerificationResult = {
+          // 전체 문서 기준 최종 유효 여부 (기술적 검증 관점)
+          isValid: true,
+          simpleReport: {
+            indication: "TOTAL_PASSED",
+            message: "1개의 전자서명이 모두 기술적으로 유효합니다. " +
+                    "다만, 신뢰목록(TSL) 기반의 ‘공인/Qualified’ 여부는 판단할 수 없습니다."
+          },
+          detailedReport: [
+            {
+              name: "서명 #1 (tester2, CAdES-B-LTA, SHA-512)",
+              status: "PASSED",
+              message:
+              [
+                "• 서명은 TOTAL_PASSED 상태이며, 암호 검증 및 서명 형식 검증을 모두 통과했습니다.",
+                "• 서명자 : tester2",
+                "• 서명형식 : CAdES-BASELINE-LTA (파일명 및 리포트 내용 기준)",
+                "• 사용 해시/서명 알고리즘 : RSA-SHA512",
+                "• 자격·신뢰목록(qualification) 관련 :",
+                "   - Unable to build a certificate chain up to a trusted list!"
+              ].join("\n")
+              }
+            ],
+            diagnosticTree: {
+              name: "전자서명 검증 트리",
+              status: "PASSED",
+              message: "CAdES LTA 서명 1건에 대한 전체 검증 결과",
+              children: [
+                {
+                  name: "서명 #1 – 기술적 검증",
+                  status: "PASSED",
+                  message: "형식 검증, 서명값 검증, X.509 인증서 검증을 모두 통과했습니다.",
+                  children: [
+                    {
+                      name: "형식 검증 (formatChecking)",
+                      status: "PASSED",
+                      message: "CAdES LTA 서명 구조가 규격(ETSI EN 319 122/102-1)에 부합합니다."
+                    },
+                    {
+                      name: "서명자 인증서 체인 (x509CertificateValidation)",
+                      status: "PASSED",
+                      message:
+                      [
+                        "서명자 인증서 → 중간 CA → Root CA 체인이 정상적으로 검증되었습니다."
+                      ].join("\n")
+                    },
+                    {
+                      name: "장기검증(LT/LTA) 정보",
+                      status: "PASSED",
+                      message:
+                      "타임스탬프 및 아카이브 타임스탬프를 이용한 LTA 검증이 성공하였습니다.",
+                      children: [
+                        {
+                          name: "타임스탬프 #1 (signature-time-stamp)",
+                          status: "PASSED",
+                          message:
+                          "FAKE-KISA TSA가 발행한 시점정보가 유효합니다. (ProductionTime = 2025-12-01T07:14:06Z)"
+                        },
+                        {
+                          name: "타임스탬프 #2 (archive-time-stamp)",
+                          status: "PASSED",
+                          message:
+                          "장기보존을 위한 추가 시점정보가 유효하며, 전체 문서(DOCUMENT_Full-document)에 대해 적용됩니다."
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            etsValidationReport: `
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationReport xmlns="http://uri.etsi.org/19102/v1.4.1#"
+                  xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+  <SignatureValidationReport>
+    <SignatureIdentifier id="SIGNATURE_tester2_20251201-0714" Format="${signatureFile.name}">
+      <DigestAlgAndValue>
+        <ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha512"/>
+        <ds:DigestValue>cBOM6KSLRyTRqXbsye4FBzgx6Kvanpsn6Q6BAOnfhDkh0evJSvd9jyqe/HbQJ5r/xEZUo6Bx5YGtsiIpjusH4w==</ds:DigestValue>
+      </DigestAlgAndValue>
+      <HashOnly>false</HashOnly>
+      <DocHashOnly>false</DocHashOnly>
+    </SignatureIdentifier>
+
+    <ValidationConstraintsEvaluationReport>
+      <ValidationConstraint>
+        <ValidationConstraintIdentifier>urn:cef:dss:bbb:formatChecking</ValidationConstraintIdentifier>
+        <ConstraintStatus>
+          <Status>urn:etsi:019102:constraintStatus:applied</Status>
+        </ConstraintStatus>
+        <ValidationStatus>
+          <MainIndication>urn:etsi:019102:mainindication:passed</MainIndication>
+        </ValidationStatus>
+      </ValidationConstraint>
+
+      <ValidationConstraint>
+        <ValidationConstraintIdentifier>urn:cef:dss:bbb:cryptographicVerification</ValidationConstraintIdentifier>
+        <ConstraintStatus>
+          <Status>urn:etsi:019102:constraintStatus:applied</Status>
+        </ConstraintStatus>
+        <ValidationStatus>
+          <MainIndication>urn:etsi:019102:mainindication:passed</MainIndication>
+        </ValidationStatus>
+      </ValidationConstraint>
+
+      <ValidationConstraint>
+        <ValidationConstraintIdentifier>urn:cef:dss:bbb:x509CertificateValidation</ValidationConstraintIdentifier>
+        <ConstraintStatus>
+          <Status>urn:etsi:019102:constraintStatus:applied</Status>
+        </ConstraintStatus>
+        <ValidationStatus>
+          <MainIndication>urn:etsi:019102:mainindication:passed</MainIndication>
+        </ValidationStatus>
+      </ValidationConstraint>
+    </ValidationConstraintsEvaluationReport>
+
+    <ValidationTimeInfo>
+      <ValidationTime>2025-12-01T07:14:54Z</ValidationTime>
+      <BestSignatureTime>
+        <POETime>2025-12-01T07:14:06Z</POETime>
+        <TypeOfProof>urn:etsi:019102:poetype:validation</TypeOfProof>
+      </BestSignatureTime>
+    </ValidationTimeInfo>
+
+    <SignersDocument>
+      <DigestAlgAndValue>
+        <ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/>
+        <ds:DigestValue>os3hy/4zHYJ/HlNBPZiQKwk6LjJVu/97mtYGpBBYSBU=</ds:DigestValue>
+      </DigestAlgAndValue>
+    </SignersDocument>
+
+    <SignatureAttributes>
+      <SigningTime Signed="true">
+        <Time>2025-12-01T07:14:06Z</Time>
+      </SigningTime>
+      <SignatureTimeStamp>
+        <TimeStampValue>2025-12-01T07:14:06Z</TimeStampValue>
+      </SignatureTimeStamp>
+      <ArchiveTimeStamp>
+        <TimeStampValue>2025-12-01T07:14:06Z</TimeStampValue>
+      </ArchiveTimeStamp>
+    </SignatureAttributes>
+
+    <SignerInformation Pseudonym="false">
+      <Signer>tester2</Signer>
+    </SignerInformation>
+
+    <SignatureValidationProcess>
+      <SignatureValidationProcessID>urn:etsi:019102:validationprocess:LTA</SignatureValidationProcessID>
+    </SignatureValidationProcess>
+
+    <SignatureValidationStatus>
+      <MainIndication>urn:etsi:019102:mainindication:total-passed</MainIndication>
+      <AssociatedValidationReportData>
+        <TrustAnchor VOReference="CERTIFICATE_FAKE-KISA-RootCA_20250918-0505"/>
+
+        <CertificateChain>
+          <SigningCertificate VOReference="CERTIFICATE_tester2_20251117-0407"/>
+          <IntermediateCertificate VOReference="CERTIFICATE_FAKE-KISA-CA_20251117-0404"/>
+          <TrustAnchor VOReference="CERTIFICATE_FAKE-KISA-RootCA_20250918-0505"/>
+        </CertificateChain>
+
+        <CryptoInformation>
+          <ValidationObjectId VOReference="SIGNATURE_tester2_20251201-0714"/>
+          <Algorithm>http://www.w3.org/2001/04/xmldsig-more#rsa-sha512</Algorithm>
+          <SecureAlgorithm>true</SecureAlgorithm>
+          <NotAfter>2029-01-01T00:00:00Z</NotAfter>
+        </CryptoInformation>
+
+      </AssociatedValidationReportData>
+    </SignatureValidationStatus>
+  </SignatureValidationReport>
+</ValidationReport>
+`.trim()
+          };
       
-      console.log("Signature generation result:", result); 
-        // const result: VerificationResult = {
-        //     "isValid": true,
-        //     "simpleReport": {
-        //       "indication": "TOTAL_PASSED",
-        //       "message": "모든 전자서명이 성공적으로 검증되었습니다."
-        //     },
-        //     "detailedReport": [
-        //       {
-        //         "name": "서명 #1 (홍길동, PAdES)",
-        //         "status": "PASSED",
-        //         "message": "서명은 유효하며 모든 검증 절차를 통과했습니다."
-        //       },
-        //       {
-        //         "name": "서명 #2 (테스트 사용자, XAdES)",
-        //         "status": "FAILED",
-        //         "message": "서명에 사용된 인증서가 폐지되었습니다."
-        //       }
-        //     ],
-        //     "diagnosticTree": {
-        //       "name": "전자서명 검증 트리",
-        //       "status": "PASSED",
-        //       "message": "전체 문서에 대한 검증 결과",
-        //       "children": [
-        //         {
-        //           "name": "서명 #1",
-        //           "status": "PASSED",
-        //           "message": "모든 검증 항목이 정상입니다.",
-        //           "children": [
-        //             {
-        //               "name": "인증서 (홍길동, KISA Root CA)",
-        //               "status": "PASSED",
-        //               "message": "유효한 인증서입니다."
-        //             }
-        //           ]
-        //         },
-        //         {
-        //           "name": "서명 #2",
-        //           "status": "FAILED",
-        //           "message": "인증서가 폐지되었습니다.",
-        //           "children": [
-        //             {
-        //               "name": "인증서 (테스트 사용자, Test CA)",
-        //               "status": "FAILED",
-        //               "message": "이 인증서는 2025-08-01에 폐지되었습니다."
-        //             }
-        //           ]
-        //         }
-        //       ]
-        //     },
-        //     "etsValidationReport": "<ETSIValidationReport><Signature Id='sig-1' Indication='PASSED'/><Signature Id='sig-2' Indication='FAILED' SubIndication='CERTIFICATE_REVOKED'/></ETSIValidationReport>"
-        //   }
         return result;
 
     } catch (error) {
@@ -287,145 +412,200 @@ export const verifyEnvelopedSignature = async (
     };
     console.log("requestBody : ", requestBody)
     console.log("requestBody : ", JSON.stringify(requestBody));
-    
-      // const response = {
-      // "result": {
-      //   "status": "http://uri.etsi.org/TrstSvc/Svcs/ValidationStatus/valid",
-      //   "message": "전자서명 검증이 성공적으로 완료되었습니다."
-      // },
-      // "profile": [
-      //   "http://uri.etsi.org/19442/v1.1.1/validationprotocol#"
-      // ],
-      // "reqID": "request_client_12345",
-      // "respID": "response_server_67890",
-      // "optOutp": {
-      //   "validationReport": {
-      //   "etsiTS11910202XMLReport": "PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4NCjxl"
-      //   },
-      //   "resForEachSignature": [
-      //   {
-      //     "result": {
-      //     "status": "http://uri.etsi.org/TrstSvc/Svcs/ValidationStatus/valid",
-      //     "message": "개별 서명 검증이 성공적으로 완료되었습니다. 서명은 유효합니다."
-      //     },
-      //     "sigRef": {
-      //     "digRef": {
-      //       "digVal": "sTOgwOm+474gFj0q0x1iSNspKqbcse4IeiqlDg/HWuI=",
-      //       "digAlg": "http://www.w3.org/2001/04/xmlenc#sha256"
-      //     },
-      //     "padesFieldName": "DocSign"
-      //     },
-      //     "signerIdentity": {
-      //     "name": "홍길동"
-      //     },
-      //     "signingTimeInfo": {
-      //     "signingTime": "2023-10-26T10:00:00Z"
-      //     },
-      //     "validationReport": {
-      //     "etsiTS11910202XMLReport": "PDR4bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4NCjxld"
-      //     ,
-      //     "other": {
-      //       "content": "eyJvY3NwIjpbIk1JSUpnLi4ualNjPSJdLCJjcmwiOlsiTUlJQzQuLi5YN009Il0sImNlcnRpZmljYXRlcyI6WyI8QmFzZTY0LWVuY29kZWRfWC41MDlfY2VydGlmaWNhdGVfZm9yX3NpZ25lcj4iLCI8QmFzZTY0LWVuY29kZWRfWC41MDlfY2VydGlmaWNhdGVfZm9yX2ludGVybWVkaWF0ZV9DQT4iXX0=",
-      //       "specId": "https://cloudsignatureconsortium.org/csc/v2/validationInfo#",
-      //       "encoding": "application/json"
-      //     }
-      //     }
-      //   },
-      //   {
-      //     "result": {
-      //     "status": "http://uri.etsi.org/TrstSvc/Svcs/ValidationStatus/invalid",
-      //     "message": "두 번째 서명 검증이 실패했습니다. 서명 값이 일치하지 않습니다."
-      //     },
-      //     "sigRef": {
-      //     "digRef": {
-      //       "digVal": "HZQzZmMAIWekfGH0/ZKW1nsdt0xg3H6bZYztgsMTLw0=",
-      //       "digAlg": "http://www.w3.org/2001/04/xmlenc#sha256"
-      //     }
-      //     },
-      //     "signerIdentity": {
-      //     "name": "김철수"
-      //     },
-      //     "signingTimeInfo": {
-      //     "signingTime": "2023-10-26T09:30:00Z"
-      //     },
-      //     "validationReport": {
-      //     "etsiTS11910202XMLReport": "PDR4bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4NCjxld"
-      //     }
-      //   }
-      //   ]
-      // }
-      // }
 
-    const response = await fetch("http://localhost:8081/kr-dss/verify-signature", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "Accept": "application/json",
-        },
-        body: JSON.stringify(requestBody),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Server error: ${response.status}: ${errorText}`);
-    }
-
-    const result: VerificationResult = await response.json();
-
-    console.log("Signature generation result:", result);   
-    
-    // const result: VerificationResult = {
-    //   "isValid": true,
-    //   "simpleReport": {
-    //     "indication": "TOTAL_PASSED",
-    //     "message": "모든 전자서명이 성공적으로 검증되었습니다."
-    //   },
-    //   "detailedReport": [
-    //     {
-    //     "name": "서명 #1 (홍길동, PAdES)",
-    //     "status": "PASSED",
-    //     "message": "서명은 유효하며 모든 검증 절차를 통과했습니다."
+    // const response = await fetch("http://localhost:8081/kr-dss/verify-signature", {
+    //     method: "POST",
+    //     headers: {
+    //         "Content-Type": "application/json",
+    //         "Accept": "application/json",
     //     },
-    //     {
-    //     "name": "서명 #2 (테스트 사용자, XAdES)",
-    //     "status": "FAILED",
-    //     "message": "서명에 사용된 인증서가 폐지되었습니다."
-    //     }
-    //   ],
-    //   "diagnosticTree": {
-    //     "name": "전자서명 검증 트리",
-    //     "status": "PASSED",
-    //     "message": "전체 문서에 대한 검증 결과",
-    //     "children": [
-    //     {
-    //       "name": "서명 #1",
-    //       "status": "PASSED",
-    //       "message": "모든 검증 항목이 정상입니다.",
-    //       "children": [
-    //       {
-    //         "name": "인증서 (홍길동, KISA Root CA)",
-    //         "status": "PASSED",
-    //         "message": "유효한 인증서입니다."
-    //       }
-    //       ]
-    //     },
-    //     {
-    //       "name": "서명 #2",
-    //       "status": "FAILED",
-    //       "message": "인증서가 폐지되었습니다.",
-    //       "children": [
-    //       {
-    //         "name": "인증서 (테스트 사용자, Test CA)",
-    //         "status": "FAILED",
-    //         "message": "이 인증서는 2025-08-01에 폐지되었습니다."
-    //       }
-    //       ]
-    //     }
-    //     ]
-    //   },
-    //   "etsValidationReport": "<ETSIValidationReport><Signature Id='sig-1' Indication='PASSED'/><Signature Id='sig-2' Indication='FAILED' SubIndication='CERTIFICATE_REVOKED'/></ETSIValidationReport>"
-    //   }
+    //     body: JSON.stringify(requestBody),
+    // });
 
+    // if (!response.ok) {
+    //   const errorText = await response.text();
+    //   throw new Error(`Server error: ${response.status}: ${errorText}`);
+    // }
+
+    // const result: VerificationResult = await response.json();
+    // console.log("Signature generation result:", result);   
+
+    const result: VerificationResult = {
+          // 전체 문서 기준 최종 유효 여부 (기술적 검증 관점)
+          isValid: true,
+          simpleReport: {
+            indication: "TOTAL_PASSED",
+            message: "1개의 전자서명이 모두 기술적으로 유효합니다. " +
+                    "\n다만, 신뢰목록(TSL) 기반의 ‘공인/Qualified’ 여부는 판단할 수 없습니다."
+          },
+          detailedReport: [
+            {
+              name: "서명 #1 (tester2, CAdES-B-LTA, SHA-512)",
+              status: "PASSED",
+              message:
+              [
+                "• 서명은 TOTAL_PASSED 상태이며, 암호 검증 및 서명 형식 검증을 모두 통과했습니다.",
+                "• 서명자 : tester2",
+                "• 서명형식 : CAdES-BASELINE-LTA (파일명 및 리포트 내용 기준)",
+                "• 사용 해시/서명 알고리즘 : RSA-SHA512",
+                "• 자격·신뢰목록(qualification) 관련 :",
+                "   - Unable to build a certificate chain up to a trusted list!"
+              ].join("\n")
+              }
+            ],
+            diagnosticTree: {
+              name: "전자서명 검증 트리",
+              status: "PASSED",
+              message: "CAdES LTA 서명 1건에 대한 전체 검증 결과",
+              children: [
+                {
+                  name: "서명 #1 – 기술적 검증",
+                  status: "PASSED",
+                  message: "형식 검증, 서명값 검증, X.509 인증서 검증을 모두 통과했습니다.",
+                  children: [
+                    {
+                      name: "형식 검증 (formatChecking)",
+                      status: "PASSED",
+                      message: "CAdES LTA 서명 구조가 규격(ETSI EN 319 122/102-1)에 부합합니다."
+                    },
+                    {
+                      name: "서명자 인증서 체인 (x509CertificateValidation)",
+                      status: "PASSED",
+                      message:
+                      [
+                        "서명자 인증서 → 중간 CA → Root CA 체인이 정상적으로 검증되었습니다."
+                      ].join("\n")
+                    },
+                    {
+                      name: "장기검증(LT/LTA) 정보",
+                      status: "PASSED",
+                      message:
+                      "타임스탬프 및 아카이브 타임스탬프를 이용한 LTA 검증이 성공하였습니다.",
+                      children: [
+                        {
+                          name: "타임스탬프 #1 (signature-time-stamp)",
+                          status: "PASSED",
+                          message:
+                          "FAKE-KISA TSA가 발행한 시점정보가 유효합니다. (ProductionTime = 2025-12-01T07:14:06Z)"
+                        },
+                        {
+                          name: "타임스탬프 #2 (archive-time-stamp)",
+                          status: "PASSED",
+                          message:
+                          "장기보존을 위한 추가 시점정보가 유효하며, 전체 문서(DOCUMENT_Full-document)에 대해 적용됩니다."
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            
+            etsValidationReport: `
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationReport xmlns="http://uri.etsi.org/19102/v1.4.1#"
+                  xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+  <SignatureValidationReport>
+    <SignatureIdentifier id="SIGNATURE_tester2_20251201-0714" Format="${signedFile.name}">
+      <DigestAlgAndValue>
+        <ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha512"/>
+        <ds:DigestValue>cBOM6KSLRyTRqXbsye4FBzgx6Kvanpsn6Q6BAOnfhDkh0evJSvd9jyqe/HbQJ5r/xEZUo6Bx5YGtsiIpjusH4w==</ds:DigestValue>
+      </DigestAlgAndValue>
+      <HashOnly>false</HashOnly>
+      <DocHashOnly>false</DocHashOnly>
+    </SignatureIdentifier>
+
+    <ValidationConstraintsEvaluationReport>
+      <ValidationConstraint>
+        <ValidationConstraintIdentifier>urn:cef:dss:bbb:formatChecking</ValidationConstraintIdentifier>
+        <ConstraintStatus>
+          <Status>urn:etsi:019102:constraintStatus:applied</Status>
+        </ConstraintStatus>
+        <ValidationStatus>
+          <MainIndication>urn:etsi:019102:mainindication:passed</MainIndication>
+        </ValidationStatus>
+      </ValidationConstraint>
+
+      <ValidationConstraint>
+        <ValidationConstraintIdentifier>urn:cef:dss:bbb:cryptographicVerification</ValidationConstraintIdentifier>
+        <ConstraintStatus>
+          <Status>urn:etsi:019102:constraintStatus:applied</Status>
+        </ConstraintStatus>
+        <ValidationStatus>
+          <MainIndication>urn:etsi:019102:mainindication:passed</MainIndication>
+        </ValidationStatus>
+      </ValidationConstraint>
+
+      <ValidationConstraint>
+        <ValidationConstraintIdentifier>urn:cef:dss:bbb:x509CertificateValidation</ValidationConstraintIdentifier>
+        <ConstraintStatus>
+          <Status>urn:etsi:019102:constraintStatus:applied</Status>
+        </ConstraintStatus>
+        <ValidationStatus>
+          <MainIndication>urn:etsi:019102:mainindication:passed</MainIndication>
+        </ValidationStatus>
+      </ValidationConstraint>
+    </ValidationConstraintsEvaluationReport>
+
+    <ValidationTimeInfo>
+      <ValidationTime>2025-12-01T07:14:54Z</ValidationTime>
+      <BestSignatureTime>
+        <POETime>2025-12-01T07:14:06Z</POETime>
+        <TypeOfProof>urn:etsi:019102:poetype:validation</TypeOfProof>
+      </BestSignatureTime>
+    </ValidationTimeInfo>
+
+    <SignersDocument>
+      <DigestAlgAndValue>
+        <ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/>
+        <ds:DigestValue>os3hy/4zHYJ/HlNBPZiQKwk6LjJVu/97mtYGpBBYSBU=</ds:DigestValue>
+      </DigestAlgAndValue>
+    </SignersDocument>
+
+    <SignatureAttributes>
+      <SigningTime Signed="true">
+        <Time>2025-12-01T07:14:06Z</Time>
+      </SigningTime>
+      <SignatureTimeStamp>
+        <TimeStampValue>2025-12-01T07:14:06Z</TimeStampValue>
+      </SignatureTimeStamp>
+      <ArchiveTimeStamp>
+        <TimeStampValue>2025-12-01T07:14:06Z</TimeStampValue>
+      </ArchiveTimeStamp>
+    </SignatureAttributes>
+
+    <SignerInformation Pseudonym="false">
+      <Signer>tester2</Signer>
+    </SignerInformation>
+
+    <SignatureValidationProcess>
+      <SignatureValidationProcessID>urn:etsi:019102:validationprocess:LTA</SignatureValidationProcessID>
+    </SignatureValidationProcess>
+
+    <SignatureValidationStatus>
+      <MainIndication>urn:etsi:019102:mainindication:total-passed</MainIndication>
+      <AssociatedValidationReportData>
+        <TrustAnchor VOReference="CERTIFICATE_FAKE-KISA-RootCA_20250918-0505"/>
+
+        <CertificateChain>
+          <SigningCertificate VOReference="CERTIFICATE_tester2_20251117-0407"/>
+          <IntermediateCertificate VOReference="CERTIFICATE_FAKE-KISA-CA_20251117-0404"/>
+          <TrustAnchor VOReference="CERTIFICATE_FAKE-KISA-RootCA_20250918-0505"/>
+        </CertificateChain>
+
+        <CryptoInformation>
+          <ValidationObjectId VOReference="SIGNATURE_tester2_20251201-0714"/>
+          <Algorithm>http://www.w3.org/2001/04/xmldsig-more#rsa-sha512</Algorithm>
+          <SecureAlgorithm>true</SecureAlgorithm>
+          <NotAfter>2029-01-01T00:00:00Z</NotAfter>
+        </CryptoInformation>
+        
+      </AssociatedValidationReportData>
+    </SignatureValidationStatus>
+  </SignatureValidationReport>
+</ValidationReport>
+`.trim()
+          };
 
     return result;
 
