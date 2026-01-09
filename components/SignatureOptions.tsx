@@ -39,7 +39,7 @@ const SignatureOptionsForm: React.FC<SignatureOptionsFormProps> = ({ onChange, d
     // Rule: ASiC containers require Detached packaging
     if (newOpts.container === 'ASiC-S' || newOpts.container === 'ASiC-E') {
         newOpts.packaging = 'Detached';
-        newDisabled.packaging.push('Enveloped', 'Enveloping', 'Internally detached');        
+        newDisabled.packaging.push('Enveloped', 'Enveloping');        
         newDisabled.signatureFormat.push('PAdES', 'JAdES');        
     }else{
       newOpts.container = 'No';
@@ -48,11 +48,11 @@ const SignatureOptionsForm: React.FC<SignatureOptionsFormProps> = ({ onChange, d
       }
       if (newOpts.signatureFormat === 'CAdES' || newOpts.signatureFormat === 'JAdES') {       
         newOpts.packaging = 'Enveloping';            
-        newDisabled.packaging.push('Enveloped', 'Internally detached');
+        newDisabled.packaging.push('Enveloped');
       }
       if (newOpts.signatureFormat === 'PAdES') {       
         newOpts.packaging = 'Enveloped';    
-        newDisabled.packaging.push('Enveloping', 'Detached','Internally detached');
+        newDisabled.packaging.push('Enveloping', 'Detached');
       }
     }
 
@@ -130,7 +130,7 @@ const SignatureOptionsForm: React.FC<SignatureOptionsFormProps> = ({ onChange, d
       <div className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-5 items-center">
         <RadioGroup label="Container" name="container" optionsList={['No', 'ASiC-S', 'ASiC-E']} selected={options.container} field="container" disabledList={disabledOptions.container} />
         <RadioGroup label="Signature format" name="signatureFormat" optionsList={['XAdES', 'CAdES', 'PAdES', 'JAdES']} selected={options.signatureFormat} field="signatureFormat" disabledList={disabledOptions.signatureFormat} />
-        <RadioGroup label="Packaging" name="packaging" optionsList={['Enveloped', 'Enveloping', 'Detached', 'Internally detached']} selected={options.packaging} field="packaging" disabledList={disabledOptions.packaging} />
+        <RadioGroup label="Packaging" name="packaging" optionsList={['Enveloped', 'Enveloping', 'Detached']} selected={options.packaging} field="packaging" disabledList={disabledOptions.packaging} />
         
         <label htmlFor="level" className="font-medium text-gray-300 text-right">Level</label>
         <select

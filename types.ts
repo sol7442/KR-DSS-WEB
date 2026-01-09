@@ -22,8 +22,9 @@ export interface SignatureResult {
 
 // --- New Validation Policy Types ---
 export interface ValidationPolicy {
-    validationModel: 'Shell' | 'Chain';
-    digestAlgorithmRequirement: 'Any' | 'SHA-256' | 'SHA-384' | 'SHA-512';
+    container: 'NO'|'ASiC-S' | 'ASiC-E';
+    signatureFormat: 'XAdES' | 'CAdES' | 'PAdES' | 'JAdES';
+    signatureLevel: 'B-B' | 'B-T' | 'B-LT' | 'B-LTA';
     validationTime: string; // ISO string for datetime-local
     trustAnchor: string;
 }
@@ -31,11 +32,15 @@ export interface ValidationPolicy {
 
 // --- Detailed Verification Result Types ---
 
-type VerificationStatus = 'PASSED' | 'FAILED' | 'INDETERMINATE' | 'WARNING';
+//type VerificationStatus = 'PASSED' | 'FAILED' | 'INDETERMINATE' | 'WARNING';
+type VerificationStatus = 'TOTAL_PASSED' | 'PASSED' |'TOTAL_FAILED' | 'FAILED' | 'INDETERMINATE';
 
 interface SimpleReport {
-  indication: 'TOTAL_PASSED' | 'TOTAL_FAILED' | 'INDETERMINATE';
+  indication: VerificationStatus;
   message: string;
+  subIndication: string | null;
+  validationTime: string | null;
+  signatureCount: number;
 }
 
 interface DetailedReportItem {
@@ -48,13 +53,29 @@ interface DiagnosticTreeNode {
   name: string;
   status: VerificationStatus;
   message: string;
-  children?: DiagnosticTreeNode[];
+  children?: DiagnosticTreeNode[] | null;
+}
+
+interface EtsiValidationReportInfo {
+  available: boolean;
+  message: string | null;
+  mainIndication: VerificationStatus | null;
+  validationTime: string | null;
+  poeTime: string | null;
+  policy: string | null;
+  algorithm: string | null;
+  signerInfo: string | null;
+  cert: string | null;
+  certNotAfter: string | null;
+  timeStampEvidence: string | null;
 }
 
 export interface VerificationResult {
   isValid: boolean;
-  simpleReport: SimpleReport;
-  detailedReport: DetailedReportItem[];
-  diagnosticTree: DiagnosticTreeNode;
-  etsValidationReport: string; // Simulated XML content
+  simpleReport: SimpleReport | null;
+  detailedReport: DetailedReportItem[] | null;
+  diagnosticTree: DiagnosticTreeNode | null;
+  etsiValidationReport: EtsiValidationReportInfo | null; 
+  fileName: string | null;
+  downloadUrl: string | null;
 }

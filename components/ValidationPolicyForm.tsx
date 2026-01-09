@@ -12,7 +12,7 @@ const ValidationPolicyForm: React.FC<ValidationPolicyFormProps> = ({ onChange, d
     signatureFormat: 'PAdES',
     signatureLevel: 'B',
     validationTime: new Date().toISOString().slice(0, 16),
-    trustAnchor: 'European Union Trusted List (Simulated)',
+    trustAnchor: 'KR-DSS Test Trust Anchor', //European Union Trusted List (Simulated)
   });
 
   useEffect(() => {
@@ -87,10 +87,10 @@ const ValidationPolicyForm: React.FC<ValidationPolicyFormProps> = ({ onChange, d
           disabled={disabled}
           className="w-full bg-gray-900 border border-gray-600 rounded-lg p-2 text-gray-200 focus:ring-2 focus:ring-blue-500"
         >
-          <option value="B">B - Basic</option>
-          <option value="T">BT - With Timestamp</option>
-          <option value="LT">BLT - Long Term (with Validation Data)</option>
-          <option value="LTA">BLTA - Archival (with Time-Stamp Chain)</option>
+          <option value="B">B-B</option>
+          <option value="T">B-T</option>
+          <option value="LT">B-LT</option>
+          <option value="LTA">B-LTA</option>
         </select>
 
         {/* Validation Time */}
