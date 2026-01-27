@@ -221,8 +221,11 @@ export const verifySignature = async (
       const result: VerificationResult = await response.json();      
       console.log("Signature generation result:", result); 
       
+      if (result.isValid == false) {
+        throw new Error(`Signature parsing failed. The signature structure is unsupported or corrupted.`);
+      }
       
-        return result;
+      return result;
 
     } catch (error) {
         console.error("Error verifying signature:", error);
@@ -282,6 +285,10 @@ export const verifyEnvelopedSignature = async (
     const result: VerificationResult = await response.json();
     console.log("Signature generation result:", result);   
 
+
+    if (result.isValid == false) {
+      throw new Error(`Signature parsing failed. The signature structure is unsupported or corrupted.`);
+    }
 
     return result;
 
